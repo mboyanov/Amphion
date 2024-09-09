@@ -126,6 +126,14 @@ def __extract_utt_acoustic_features(dataset_output, cfg, utt):
             dataset_output, cfg.preprocess.raw_data, utt["Singer"], uid + ".wav"
         )
 
+    feats_exist = []
+    for (should_extract, dir) in ((cfg.preprocess.extract_mel, cfg.preprocess.mel_dir),(cfg.preprocess.extract_energy, cfg.preprocess.energy_dir),(cfg.preprocess.extract_pitch, cfg.preprocess.pitch_dir),(cfg.preprocess.extract_uv, cfg.preprocess.uv_dir)):
+        if should_extract:
+            feats_exist.append(feature_exists(dataset_output, dir, uid))
+
+    if all(feats_exist):
+        return
+
     with torch.no_grad():
         # Load audio data into tensor with sample rate of the config file
         wav_torch, _ = audio.load_audio_torch(wav_path, cfg.preprocess.sample_rate)
