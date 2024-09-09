@@ -9,6 +9,10 @@ import torch
 import torchaudio
 
 
+def feature_exists(process_dir, feature_dir, item):
+    out_path = os.path.join(process_dir, feature_dir, item+".npy")
+    return os.path.exists(out_path)
+
 def save_feature(process_dir, feature_dir, item, feature, overrides=True):
     """Save features to path
 

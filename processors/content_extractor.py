@@ -503,6 +503,11 @@ def extract_utt_content_features_dataloader(cfg, metadata, num_workers):
                 cfg.preprocess.processed_dir, dataset_name, "whisper"
             )
             os.makedirs(feat_dir, exist_ok=True)
+
+            feat_files = set(os.listdir(feat_dir))
+
+            filtered_metadata = [m for m in metadata if m["Uid"] + ".npy" not in feat_files]
+
             feat_files_num = len(os.listdir(feat_dir))
 
             if feat_files_num != len(metadata):
@@ -510,7 +515,7 @@ def extract_utt_content_features_dataloader(cfg, metadata, num_workers):
                     cfg,
                     dataset_name,
                     cfg.preprocess.whisper_sample_rate,
-                    metadata=metadata,
+                    metadata=filtered_metadata,
                 )
                 data_loader = DataLoader(
                     whisper_waveforms,
@@ -536,13 +541,15 @@ def extract_utt_content_features_dataloader(cfg, metadata, num_workers):
             )
             os.makedirs(feat_dir, exist_ok=True)
             feat_files_num = len(os.listdir(feat_dir))
+            feat_files = set(os.listdir(feat_dir))
 
+            filtered_metadata = [m for m in metadata if m["Uid"] + ".npy" not in feat_files]
             if feat_files_num != len(metadata):
                 contentvec_waveforms = LibrosaDataset(
                     cfg,
                     dataset_name,
                     cfg.preprocess.contentvec_sample_rate,
-                    metadata=metadata,
+                    metadata=filtered_metadata,
                 )
                 data_loader = DataLoader(
                     contentvec_waveforms,
