@@ -24,7 +24,8 @@ from utils.io_optim import (
 import whisper
 from modules.wenet_extractor.utils.init_model import init_model
 from modules.wenet_extractor.utils.checkpoint import load_checkpoint
-
+import logging
+logger = logging.getLogger(__name__)
 """
     Extractor for content features
     1. whisper
@@ -566,8 +567,10 @@ def extract_utt_content_features_dataloader(cfg, metadata, num_workers):
                     _metadata, wavs, lens = items
 
                     batch_content_features = extractor.extract_content_features(wavs)
-                    for index, utt in enumerate(_metadata):
-                        extractor.save_feature(utt, batch_content_features[index])
+                    for feature, utt in zip(batch_content_features, _metadata):
+                        if torch.any(torch.isnan(feature)):
+                            logger.warning(f"nan detected in {utt['Uid']}")
+                        extractor.save_feature(utt, feature)
 
         if cfg.preprocess.extract_wenet_feature:
             feat_dir = os.path.join(cfg.preprocess.processed_dir, dataset_name, "wenet")
