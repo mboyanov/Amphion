@@ -506,7 +506,7 @@ def extract_utt_content_features_dataloader(cfg, metadata, num_workers):
             feat_files_num = len(os.listdir(feat_dir))
 
             if feat_files_num != len(metadata):
-                whisper_waveforms = FFmpegDataset(
+                whisper_waveforms = TorchaudioDataset(
                     cfg,
                     dataset_name,
                     cfg.preprocess.whisper_sample_rate,
@@ -538,7 +538,7 @@ def extract_utt_content_features_dataloader(cfg, metadata, num_workers):
             feat_files_num = len(os.listdir(feat_dir))
 
             if feat_files_num != len(metadata):
-                contentvec_waveforms = LibrosaDataset(
+                contentvec_waveforms = TorchaudioDataset(
                     cfg,
                     dataset_name,
                     cfg.preprocess.contentvec_sample_rate,
