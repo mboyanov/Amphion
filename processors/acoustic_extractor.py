@@ -11,7 +11,7 @@ import numpy as np
 import json
 from tqdm import tqdm
 from sklearn.preprocessing import StandardScaler
-from utils.io import save_feature, save_txt, save_torch_audio
+from utils.io import save_feature, save_txt, save_torch_audio, feature_exists
 from utils.util import has_existed
 from utils.tokenizer import extract_encodec_token
 from utils.stft import TacotronSTFT
@@ -126,6 +126,14 @@ def __extract_utt_acoustic_features(dataset_output, cfg, utt):
             dataset_output, cfg.preprocess.raw_data, utt["Singer"], uid + ".wav"
         )
 
+    feats_exist = []
+    for (should_extract, dir) in ((cfg.preprocess.extract_mel, cfg.preprocess.mel_dir),(cfg.preprocess.extract_energy, cfg.preprocess.energy_dir),(cfg.preprocess.extract_pitch, cfg.preprocess.pitch_dir),(cfg.preprocess.extract_uv, cfg.preprocess.uv_dir)):
+        if should_extract:
+            feats_exist.append(feature_exists(dataset_output, dir, uid))
+
+    if all(feats_exist):
+        return
+
     with torch.no_grad():
         # Load audio data into tensor with sample rate of the config file
         wav_torch, _ = audio.load_audio_torch(wav_path, cfg.preprocess.sample_rate)
@@ -147,7 +155,8 @@ def __extract_utt_acoustic_features(dataset_output, cfg, utt):
                 dataset_output, cfg.preprocess.linear_dir, uid, linear.cpu().numpy()
             )
 
-        if cfg.preprocess.extract_mel:
+        if cfg.preprocess.extract_mel \
+                and not feature_exists(dataset_output, cfg.preprocess.mel_dir, uid):
             if cfg.preprocess.mel_extract_mode == "taco":
                 _stft = TacotronSTFT(
                     sampling_rate=cfg.preprocess.sample_rate,
@@ -167,7 +176,8 @@ def __extract_utt_acoustic_features(dataset_output, cfg, utt):
                 mel = extract_mel_features(wav_torch.unsqueeze(0), cfg.preprocess)
             save_feature(dataset_output, cfg.preprocess.mel_dir, uid, mel.cpu().numpy())
 
-        if cfg.preprocess.extract_energy:
+        if cfg.preprocess.extract_energy \
+                and not feature_exists(dataset_output, cfg.preprocess.energy_dir, uid):
             if (
                 cfg.preprocess.energy_extract_mode == "from_mel"
                 and cfg.preprocess.extract_mel
@@ -201,7 +211,8 @@ def __extract_utt_acoustic_features(dataset_output, cfg, utt):
 
             save_feature(dataset_output, cfg.preprocess.energy_dir, uid, energy)
 
-        if cfg.preprocess.extract_pitch:
+        if cfg.preprocess.extract_pitch \
+                and not feature_exists(dataset_output, cfg.preprocess.pitch_dir, uid):
             pitch = f0.get_f0(wav, cfg.preprocess)
             if cfg.preprocess.extract_duration:
                 pitch = pitch[: sum(durations)]
