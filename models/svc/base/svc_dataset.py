@@ -28,6 +28,8 @@ from models.base.new_dataset import BaseTestDataset
 
 EPS = 1.0e-12
 
+import logging
+logger = logging.getLogger(__name__)
 
 class SVCOfflineDataset(BaseOfflineDataset):
     def __init__(self, cfg, dataset, is_valid=False):
@@ -69,13 +71,21 @@ class SVCOfflineDataset(BaseOfflineDataset):
 
         if self.cfg.model.condition_encoder.use_whisper:
             assert "target_len" in single_feature.keys()
-            aligned_whisper_feat = (
-                self.whisper_aligner.offline_resolution_transformation(
-                    np.load(self.utt2whisper_path[utt]), single_feature["target_len"]
+            content, len =  np.load(self.utt2whisper_path[utt]), single_feature["target_len"]
+            try:
+                aligned_whisper_feat = (
+                    self.whisper_aligner.offline_resolution_transformation(
+                        content, len
+                    )
                 )
-            )
-            single_feature["whisper_feat"] = aligned_whisper_feat
-
+                single_feature["whisper_feat"] = aligned_whisper_feat
+            except ValueError as e:
+                logger.error("Error in whisper feature transformation")
+                logger.error("utt: ", utt)
+                logger.error("content: ", content)
+                logger.error("len: ", len)
+                logger.error("utt2whisper_path: ", self.utt2whisper_path[utt])
+                raise e
         if self.cfg.model.condition_encoder.use_contentvec:
             assert "target_len" in single_feature.keys()
             aligned_contentvec = (
